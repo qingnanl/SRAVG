@@ -1,3 +1,5 @@
 exportPattern("^[[:alpha:]]+")
 import(anticlust)
+import(Seurat)
 import(dplyr)
+import(Matrix)
