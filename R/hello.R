@@ -22,3 +22,6 @@ sravg <- function(object, dr_key, dr_dims, group_size, group_within, extra_meta)
   }
   cluster <- balanced_clustering(dimred, K = group_size, method = "centroid")
 }
+
+
+'test'
