@@ -44,6 +44,14 @@
 #' @param extra_meta Vector of selected colnames(object@meta.data). This is the meta data that we want to
 #' average at the same time. The meta data columns selected must be numeric.
 #' For example extra_meta = c('nCount_RNA', 'nFeature_RNA')
+#' @return a Seurat object
+#' @export
+#' @import anticlust Seurat dplyr Matrix
+#' @examples
+
+#' pbmc_avg <- sravg(object = pbmc3k, dr_key = "pca", dr_dims = 10, group_size = 10,
+#'                             group_within = "seurat_clusters",
+#'                             extra_meta = c('nCount_RNA', 'nFeature_RNA'))
 
 
 
