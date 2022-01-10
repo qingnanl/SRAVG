@@ -10,6 +10,6 @@
 Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
 
 #install from github
-remotes::install_github("https://github.com/qingnanl/SCAVG")
+remotes::install_github("https://github.com/qingnanl/SRAVG")
 
 ```
