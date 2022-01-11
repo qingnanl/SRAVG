@@ -1,4 +1,4 @@
-# SCAVG
+# SRAVG
 
 
 ### Installation
