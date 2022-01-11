@@ -1,0 +1,85 @@
+---
+title: "sravg_example"
+author: "Qingnan Liang"
+date: "1/10/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = T)
+```
+
+## Introduction
+
+Here is a demonstration of how to use the package SRAVG to create a Seurat object with cells grouped and averaged.
+
+## Load libraries
+
+```{r, warning=FALSE, message=FALSE}
+library(Seurat)
+library(SRAVG)
+library(dplyr)
+library(Matrix)
+library(SeuratData)
+
+```
+Use the pbmc3k dataset from the SeuratData
+```{r}
+data("pbmc3k")
+pbmc3k
+```
+The pbmc3k is a Seurat object while it is not processed. To run the SRAVG, we require the preprocessing of the object. Two things are needed: first, a dimension reduction (must be one of names(object@reductions)), for grouping nearest neighbors; second, a predefined classification of cells (must be one of colnames(object@meta.data)), because we don't want to group and average cells from different cluster/type/sample/donor etc.
+
+Regular Seurat workflow:
+```{r, warning=FALSE, message=FALSE}
+pbmc3k <- pbmc3k %>% 
+  NormalizeData() %>% 
+  FindVariableFeatures() %>% 
+  ScaleData() %>% 
+  RunPCA(verbose = FALSE) %>% 
+  FindNeighbors(dims = 1:10) %>%
+  FindClusters(resolution = 0.5) %>%
+  RunUMAP(dims = 1:10, verbose = FALSE)
+
+```
+Visualize the clustering:
+```{r}
+DimPlot(pbmc3k, group.by = 'seurat_clusters', label = TRUE) + NoLegend()
+```
+
+## Run SRAVG
+Here we use 'pca' as the dimension reduction to evaluate the distances between cells, and top 10 PCs are used (dr_dims). We try to form meta-cells by averaging 10 cells to 1. The group will be within each individual 'seurat_clusters'. We also average two other columns in the meta.data and transfer to the output seurat, which are 'nCount_RNA', and 'nFeature_RNA'. At this time we only support numerical columns for 'extra_meta'.
+```{r}
+start_time <- Sys.time()
+
+pbmc_avg <- sravg(object = pbmc3k, dr_key = 'pca', dr_dims = 10, group_size = 10,
+                             group_within = 'seurat_clusters',
+                             extra_meta = c('nCount_RNA', 'nFeature_RNA'))
+end_time <- Sys.time()
+end_time - start_time
+```
+The output is a Seurat object
+
+```{r}
+pbmc_avg
+```
+We can still run UMAP on the pbmc_avg object. The 'pca' in this averaged object is calculated with averaging the original 'pca' coordinates (for each meta-cell). Basically, the dimension reduction key used in the original object will be succeeded by the averaged object (if dr_key = 'umap', then the pbmc_avg will have a 'umap' in 'reductions'). Also, the 'group_within' column will be retained in the meta.data of the averaged object.
+
+```{r, warning=FALSE}
+pbmc_avg <- RunUMAP(pbmc_avg, dims = 1:10, verbose = FALSE)
+DimPlot(pbmc_avg, group.by = 'seurat_clusters', label = T)
+```
+Compute the sparsity of matrix (proportion of zeros) before and after averaging
+
+```{r}
+sparsity <- function(matrix){
+  sparsity <- sum(matrix == 0)/(dim(matrix)[1] * dim(matrix)[2])
+  return(sparsity)
+}
+
+print(sparsity(pbmc3k@assays$RNA@counts))
+
+print(sparsity(pbmc_avg@assays$RNA@counts))
+```
