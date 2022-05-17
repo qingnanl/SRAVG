@@ -86,7 +86,6 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
   i <- 1
   j <- 1
   for (group in unique(object@meta.data[[group_within]])){
-    print(paste0("averaging ", group))
     # split expression data and dimred
     idx <- object@meta.data[[group_within]] %in% group
     expr_temp <- expr[, idx]
@@ -117,7 +116,6 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
       }
       if (!is.null(peak_assay)){
         peak_expr_temp <- peak_expr_temp[, -naidx]
-        print(head(peak_expr_temp))
       }
     }
 
@@ -129,7 +127,6 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
     if (!is.null(peak_assay)){
       # peak_expr_avg <- t(aggregate(t(peak_expr_temp), list(cluster), mean))[-1, ]
       peak_expr_avg <- Matrix::t(aM2(t(peak_expr_temp), groupings = list(cluster), fun = "mean"))
-      print(head(peak_expr_avg))
       colnames(peak_expr_avg) <- agg_id
     }
     dimred_avg <- aggregate(dimred_temp, list(cluster), mean)[, -1]
@@ -153,7 +150,6 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
       chrom_assay_temp@counts <- peak_expr_avg
       chrom_assay_temp@data <- peak_expr_avg
       obj_temp[[peak_assay]] <- chrom_assay_temp
-      print("peak assay averaging done")
     }
     
 
