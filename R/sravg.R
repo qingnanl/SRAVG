@@ -122,11 +122,11 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
     # aggregation and give names to aggregated cells
     agg_id <- paste0(group, "_", 1:K)#aggregated cell id
     # expr_avg <- t(aggregate(t(expr_temp), list(cluster), mean))[-1, ]
-    suppress_warning(expr_avg <- Matrix::t(aM2(t(expr_temp), groupings = list(cluster), fun = "mean")))
+    suppress_warnings(expr_avg <- Matrix::t(aM2(t(expr_temp), groupings = list(cluster), fun = "mean")))
     colnames(expr_avg) <- agg_id
     if (!is.null(peak_assay)){
       # peak_expr_avg <- t(aggregate(t(peak_expr_temp), list(cluster), mean))[-1, ]
-      suppress_warning(peak_expr_avg <- Matrix::t(aM2(t(peak_expr_temp), groupings = list(cluster), fun = "mean")))
+      suppress_warnings(peak_expr_avg <- Matrix::t(aM2(t(peak_expr_temp), groupings = list(cluster), fun = "mean")))
       colnames(peak_expr_avg) <- agg_id
     }
     dimred_avg <- aggregate(dimred_temp, list(cluster), mean)[, -1]
