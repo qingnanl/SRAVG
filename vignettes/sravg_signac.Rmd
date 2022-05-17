@@ -1,0 +1,94 @@
+---
+title: "sravg_signac"
+author: "Qingnan Liang"
+date: "5/17/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+opts_chunk$set(tidy.opts = list(width.cutoff = 60), tidy = T)
+```
+
+## Introduction
+
+Here is a demonstration of how to use the package SRAVG to create a Seurat object with cells grouped and averaged.
+
+## Load libraries
+
+```{r, warning=FALSE, message=FALSE}
+library(Signac)
+library(Seurat)
+library(EnsDb.Hsapiens.v86)
+library(BSgenome.Hsapiens.UCSC.hg38)
+library(SRAVG)
+
+```
+Use the pbmc3k-multiome dataset from the 10x website.
+This data is preprocessed using default Signac parameters
+```{r}
+data <- readRDS("C:/Users/liang/work/34_gene_correlation_simpson/LinkPeak/pbmc3k.rds")
+print(data@assays$RNA)
+
+```
+```{r}
+print(data@assays$peaks)
+
+```
+```{r}
+print(data@reductions)
+
+```
+"RNA" and "peaks" are the two assays we want to average; "pca" will be used as the low-dimensional coordinates for clustering cells to meta-cells.
+
+Visualize the clustering at single-cell level:
+```{r}
+DimPlot(data, group.by = 'seurat_clusters', label = TRUE) + NoLegend()
+```
+
+## Run SRAVG
+Here we use 'pca' as the dimension reduction to evaluate the distances between cells, and top 10 PCs are used (dr_dims). We try to form meta-cells by averaging 10 cells to 1. The group will be within each individual 'seurat_clusters'. We also average two other columns in the meta.data and transfer to the output seurat, which are 'nCount_RNA', and 'nFeature_RNA'. At this time we only support numerical columns for 'extra_meta'.
+```{r, warning=FALSE}
+start_time <- Sys.time()
+
+data_avg <- sravg(object = data, dr_key = 'pca', dr_dims = 10, group_size = 10,
+                             group_within = 'seurat_clusters',peak_assay = "peaks", peak_slot = "data",
+                             extra_meta = c('nCount_RNA', 'nFeature_RNA', 'nCount_ATAC', 'nFeature_ATAC'))
+end_time <- Sys.time()
+end_time - start_time
+```
+The output is a Seurat object
+
+```{r}
+print(data_avg@assays$RNA)
+```
+
+```{r}
+print(data_avg@assays$peaks)
+```
+We can still run UMAP on the data_avg object. The 'pca' in this averaged object is calculated with averaging the original 'pca' coordinates (for each meta-cell). 
+
+```{r, warning=FALSE}
+data_avg <- RunUMAP(data_avg, dims = 1:10, verbose = FALSE)
+DimPlot(data_avg, group.by = 'seurat_clusters', label = T)
+```
+Compute the sparsity of matrix (proportion of zeros) before and after averaging
+
+```{r}
+sparsity <- function(matrix){
+  sparsity <- sum(matrix == 0)/(dim(matrix)[1] * dim(matrix)[2])
+  return(sparsity)
+}
+
+print(sparsity(data@assays$RNA@counts))
+
+print(sparsity(data_avg@assays$RNA@counts))
+```
+
+```{r}
+print(sparsity(data@assays$peaks@counts))
+
+print(sparsity(data_avg@assays$peaks@counts))
+
+```
