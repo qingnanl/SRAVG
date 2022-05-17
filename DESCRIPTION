@@ -11,5 +11,5 @@ Description: This package is for single-cell sequencing analysis that split cell
 License: GPL-3 | file LICENSE
 Encoding: UTF-8
 LazyData: true
-Depends: anticlust, Seurat, dplyr, Matrix
+Depends: anticlust, Seurat, dplyr, Matrix, Matrix.utils
 RoxygenNote: 7.1.1
