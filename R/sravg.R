@@ -48,7 +48,7 @@
 #' For example extra_meta = c('nCount_RNA', 'nFeature_RNA')
 #' @return a Seurat object
 #' @export
-#' @import anticlust Seurat dplyr Matrix
+#' @import anticlust Seurat dplyr Matrix Matrix.utils pkgcond
 #' @examples
 
 #' pbmc_avg <- sravg(object = pbmc3k, dr_key = "pca", dr_dims = 10, group_size = 10,
