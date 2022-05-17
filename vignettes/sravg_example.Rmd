@@ -1,7 +1,7 @@
 ---
 title: "sravg_example"
 author: "Qingnan Liang"
-date: "1/10/2022"
+date: "5/17/2022"
 output: pdf_document
 ---
 
@@ -28,7 +28,7 @@ library(SeuratData)
 Use the pbmc3k dataset from the SeuratData
 ```{r}
 data("pbmc3k")
-pbmc3k
+#pbmc3k
 ```
 The pbmc3k is a Seurat object while it is not processed. To run the SRAVG, we require the preprocessing of the object. Two things are needed: first, a dimension reduction (must be one of names(object@reductions)), for grouping nearest neighbors; second, a predefined classification of cells (must be one of colnames(object@meta.data)), because we don't want to group and average cells from different cluster/type/sample/donor etc.
 
