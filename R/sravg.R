@@ -60,7 +60,7 @@
 #'                             extra_meta = c('nCount_RNA', 'nFeature_RNA'))
 
 
-sravg <- function(object, dr_key = 'pca', dr_dims, group_size, 
+sravg <- function(object, dr_key = 'pca', dr_dims, group_size, min_group_size = 5,
                   group_within, gex_assay = 'RNA', gex_slot = 'counts', 
                   peak_assay = NULL, peak_slot = NULL,
                   extra_meta) {
@@ -78,6 +78,8 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
   if (!is.null(extra_meta)){
     meta <- object@meta.data[, extra_meta]
   }
+  
+  min_group_size <- max(min_group_size, 5)
 
   # run the averaging within defined groups
   group_within <- group_within
@@ -97,62 +99,92 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
     if (!is.null(peak_assay)){
       peak_expr_temp <- peak_expr[, idx]
     }
-
-    # calculate K (how many clusters to search)
-    K <- floor(ncol(expr_temp)/group_size)
-    if (K <= 1){
-      K <- 2
-    }
-    cluster <- balanced_clustering(dimred_temp, K = K, method = "centroid")
-
-    # remove na
-    naidx <- which(is.na(cluster))
-    if (length(naidx) > 0){
-      cluster <- cluster[-naidx]
-      expr_temp <- expr_temp[, -naidx]
-      dimred_temp <- dimred_temp[-naidx, ]
+    
+    if (ncol(expr_temp) <= min_group_size){
+      # aggregation and give names to aggregated cells
+      agg_id <- paste0(group, "_", 1:ncol(expr_temp))#aggregated cell id
+      expr_avg <- expr_temp
+      colnames(expr_avg) <- agg_id
+      dimred_avg <- dimred_temp
+      rownames(dimred_avg) <- agg_id
       if (!is.null(extra_meta)){
-        meta_temp <- meta_temp[-naidx, ]
+        meta_avg <- meta_temp
+        rownames(meta_avg) <- agg_id
       }
       if (!is.null(peak_assay)){
-        peak_expr_temp <- peak_expr_temp[, -naidx]
+        # peak_expr_avg <- t(aggregate(t(peak_expr_temp), list(cluster), mean))[-1, ]
+        peak_expr_avg <- peak_expr_temp
+        colnames(peak_expr_avg) <- agg_id
+      }
+      if (!is.null(extra_meta)){
+        obj_temp <- CreateSeuratObject(counts = expr_avg, meta.data = meta_avg)
+      } else{
+        obj_temp <- CreateSeuratObject(counts = expr_avg)
+      }
+      obj_temp@meta.data[[group_within]] <- group
+      
+      if (!is.null(peak_assay)){
+        chrom_assay_temp <- chrom_assay
+        chrom_assay_temp@counts <- peak_expr_avg
+        chrom_assay_temp@data <- peak_expr_avg
+        obj_temp[[peak_assay]] <- chrom_assay_temp
+      }
+    }else{
+      # calculate K (how many clusters to search)
+      K <- floor(ncol(expr_temp)/group_size)
+      if (K <= 1){
+        K <- 2
+      }
+      cluster <- balanced_clustering(dimred_temp, K = K, method = "centroid")
+      
+      # remove na
+      naidx <- which(is.na(cluster))
+      if (length(naidx) > 0){
+        cluster <- cluster[-naidx]
+        expr_temp <- expr_temp[, -naidx]
+        dimred_temp <- dimred_temp[-naidx, ]
+        if (!is.null(extra_meta)){
+          meta_temp <- meta_temp[-naidx, ]
+        }
+        if (!is.null(peak_assay)){
+          peak_expr_temp <- peak_expr_temp[, -naidx]
+        }
+      }
+      
+      # aggregation and give names to aggregated cells
+      agg_id <- paste0(group, "_", 1:K)#aggregated cell id
+      # expr_avg <- t(aggregate(t(expr_temp), list(cluster), mean))[-1, ]
+      suppress_warnings(expr_avg <- aM2(expr_temp, groupings = list(cluster), fun = "mean"))
+      colnames(expr_avg) <- agg_id
+      if (!is.null(peak_assay)){
+        # peak_expr_avg <- t(aggregate(t(peak_expr_temp), list(cluster), mean))[-1, ]
+        suppress_warnings(peak_expr_avg <- aM2(peak_expr_temp, groupings = list(cluster), fun = "mean"))
+        colnames(peak_expr_avg) <- agg_id
+      }
+      dimred_avg <- aggregate(dimred_temp, list(cluster), mean)[, -1]
+      # dimred_avg <- Matrix::t(aM2(t(dimred_temp), groupings = list(cluster), fun = "mean"))
+      rownames(dimred_avg) <- agg_id
+      if (!is.null(extra_meta)){
+        meta_avg <- aggregate(meta_temp, list(cluster), mean)[, -1]
+        rownames(meta_avg) <- agg_id
+      }
+      
+      # creat Seurat object
+      if (!is.null(extra_meta)){
+        obj_temp <- CreateSeuratObject(counts = expr_avg, meta.data = meta_avg)
+      } else{
+        obj_temp <- CreateSeuratObject(counts = expr_avg)
+      }
+      obj_temp@meta.data[[group_within]] <- group
+      
+      if (!is.null(peak_assay)){
+        chrom_assay_temp <- chrom_assay
+        chrom_assay_temp@counts <- peak_expr_avg
+        chrom_assay_temp@data <- peak_expr_avg
+        obj_temp[[peak_assay]] <- chrom_assay_temp
       }
     }
-
-    # aggregation and give names to aggregated cells
-    agg_id <- paste0(group, "_", 1:K)#aggregated cell id
-    # expr_avg <- t(aggregate(t(expr_temp), list(cluster), mean))[-1, ]
-    suppress_warnings(expr_avg <- Matrix::t(aM2(t(expr_temp), groupings = list(cluster), fun = "mean")))
-    colnames(expr_avg) <- agg_id
-    if (!is.null(peak_assay)){
-      # peak_expr_avg <- t(aggregate(t(peak_expr_temp), list(cluster), mean))[-1, ]
-      suppress_warnings(peak_expr_avg <- Matrix::t(aM2(t(peak_expr_temp), groupings = list(cluster), fun = "mean")))
-      colnames(peak_expr_avg) <- agg_id
-    }
-    dimred_avg <- aggregate(dimred_temp, list(cluster), mean)[, -1]
-    # dimred_avg <- Matrix::t(aM2(t(dimred_temp), groupings = list(cluster), fun = "mean"))
-    rownames(dimred_avg) <- agg_id
-    if (!is.null(extra_meta)){
-      meta_avg <- aggregate(meta_temp, list(cluster), mean)[, -1]
-      rownames(meta_avg) <- agg_id
-    }
-
-    # creat Seurat object
-    if (!is.null(extra_meta)){
-      obj_temp <- CreateSeuratObject(counts = expr_avg, meta.data = meta_avg)
-    } else{
-      obj_temp <- CreateSeuratObject(counts = expr_avg)
-    }
-    obj_temp@meta.data[[group_within]] <- group
     
-    if (!is.null(peak_assay)){
-      chrom_assay_temp <- chrom_assay
-      chrom_assay_temp@counts <- peak_expr_avg
-      chrom_assay_temp@data <- peak_expr_avg
-      obj_temp[[peak_assay]] <- chrom_assay_temp
-    }
-    
-
     # put objects in list and merge later
     obj.list[[i]] <- obj_temp
     i <- i+1
@@ -163,7 +195,7 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
   }
 
   # merge objects in the list
-  obj <- Reduce(function(x,y) merge(x,y), obj.list)
+  suppress_warnings(obj <- Reduce(function(x,y) merge(x,y), obj.list))
 
   # merge dimred.list
   dimred_merge <- do.call(rbind, dimred.list)
@@ -192,9 +224,10 @@ aM2<-function(x,groupings=NULL,form=NULL,fun='sum',...)
   form<-as.formula(form)
   mapping<-dMcast(groupings2,form)
   colnames(mapping)<-substring(colnames(mapping),2)
-  result<-t(mapping) %*% x
+  result <- x %*% mapping
   if(fun=='mean')
-    result@x<-result@x/(aggregate.Matrix(x+1,groupings2,fun='count'))@x
+    result@x<-result@x/(aM2(x+1,groupings2,fun='count'))@x
+  #result <- t(result)
   attr(result,'crosswalk')<-grr::extract(groupings,match(rownames(result),groupings2$A))
   return(result)
 }
