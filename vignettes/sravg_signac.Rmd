@@ -52,7 +52,7 @@ Here we use 'pca' as the dimension reduction to evaluate the distances between c
 ```{r, warning=FALSE}
 start_time <- Sys.time()
 
-data_avg <- sravg(object = data, dr_key = 'pca', dr_dims = 10, group_size = 10,
+data_avg <- sravg(object = data, dr_key = 'pca', dr_dims = 1:10, group_size = 10,
                              group_within = 'seurat_clusters',peak_assay = "peaks", peak_slot = "data",
                              extra_meta = c('nCount_RNA', 'nFeature_RNA', 'nCount_ATAC', 'nFeature_ATAC'))
 end_time <- Sys.time()
