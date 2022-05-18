@@ -51,11 +51,11 @@
 #' @import anticlust Seurat dplyr Matrix Matrix.utils pkgcond
 #' @examples
 
-#' pbmc_avg <- sravg(object = pbmc3k, dr_key = "pca", dr_dims = 10, group_size = 10,
+#' pbmc_avg <- sravg(object = pbmc3k, dr_key = "pca", dr_dims = 1:10, group_size = 10,
 #'                             group_within = "seurat_clusters",
 #'                             extra_meta = c('nCount_RNA', 'nFeature_RNA'))
 
-#' pbmc_avg <- sravg(object = pbmc3k, dr_key = "pca", dr_dims = 10, group_size = 10,
+#' pbmc_avg <- sravg(object = pbmc3k, dr_key = "pca", dr_dims = 1:10, group_size = 10,
 #'                             group_within = "seurat_clusters",peak_assay = "peaks", peak_slot = "data",
 #'                             extra_meta = c('nCount_RNA', 'nFeature_RNA'))
 
@@ -72,7 +72,7 @@ sravg <- function(object, dr_key = 'pca', dr_dims, group_size,
     chrom_assay <- object[[peak_assay]]
   }
   
-  dimred <- object@reductions[[dr_key]]@cell.embeddings[, 1:dr_dims]
+  dimred <- object@reductions[[dr_key]]@cell.embeddings[, dr_dims]
 
   # meta.data for averaging
   if (!is.null(extra_meta)){
