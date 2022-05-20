@@ -224,10 +224,18 @@ aM2<-function(x,groupings=NULL,form=NULL,fun='sum',...)
   form<-as.formula(form)
   mapping<-dMcast(groupings2,form)
   colnames(mapping)<-substring(colnames(mapping),2)
-  result <- x %*% mapping
-  if(fun=='mean')
-    result@x<-result@x/(aM2(x+1,groupings2,fun='count'))@x
+  if(fun=='mean'){
+    scamat <- Diagonal(x = 1/colSums(mapping))
+    result <- x %*% mapping %*% scamat
+    result <- round(result, 3)
+  }
+  # result <- x %*% mapping
+  #print(head(dimnames(result@x)))
+  #if(fun=='mean')
+  #  result@x<-result@x/(aM2(x+1,groupings2,fun='count'))@x
+    #result@x <- sdiv(result@x, (aM2(x+1,groupings2,fun='count'))@x, names = dimnames(result))
   #result <- t(result)
   attr(result,'crosswalk')<-grr::extract(groupings,match(rownames(result),groupings2$A))
   return(result)
 }
+
