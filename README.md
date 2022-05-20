@@ -76,3 +76,8 @@ data_avg <- sravg(object = data, dr_key = 'pca', dr_dims = 10, group_size = 10,
 ```
 
 
+### Update
+
+5/18: now users can add a parameter "min_group_size", and groups smaller than this number of cells can be directly added to the final object, without being averaged. Default is 5; This parameter cannot be smaller than 5 to avoid bugs.
+
+5/19: optimized the aggregation method of the matrix to avoid converting sparse matrices to dense ones; this is critical especially for ATAC-seq data which has large numbers of features.
