@@ -63,14 +63,14 @@ pbmc3k <- pbmc3k %>%
           RunUMAP(dims = 1:10, verbose = FALSE)
 
 # run sravg() function
-pbmc_avg <- sravg(object = pbmc3k, dr_key = "pca", dr_dims = 10,
+pbmc_avg <- sravg(object = pbmc3k, dr_key = "pca", dr_dims = 1:10,
                  group_size = 10, group_within = "seurat_clusters", 
                  extra_meta = c("nCount_RNA", "nFeature_RNA"))
 ```                 
 Averaging single-cell multiomics data is now supported. Users can define 'peak_assay' and 'peak_slot', so the same group of cells will also be merged (averaged) for the peak-by-cell matrix. For details, please refer to https://github.com/qingnanl/SRAVG/tree/master/vignettes. 
 
 ```
-data_avg <- sravg(object = data, dr_key = 'pca', dr_dims = 10, group_size = 10,
+data_avg <- sravg(object = data, dr_key = 'pca', dr_dims = 1:10, group_size = 10,
                              group_within = 'seurat_clusters',peak_assay = "peaks", peak_slot = "data",
                              extra_meta = c('nCount_RNA', 'nFeature_RNA', 'nCount_ATAC', 'nFeature_ATAC'))
 ```
